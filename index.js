@@ -1,11 +1,15 @@
 const express = require('express');
 const app = express();
 
-app.use(express.text());
 app.use(express.json());
+app.use(express.text());
+
+// --- CONFIGURATION ---
+const VERSION = "1.2.0"; // You can change this whenever you update
+// ---------------------
 
 let currentScript = "-- No script set";
-let targetUser = "All"; // Default to everyone
+let targetUser = "All";
 let scriptId = Date.now(); 
 
 app.get('/', (req, res) => {
@@ -13,9 +17,11 @@ app.get('/', (req, res) => {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Roblox Remote Executor</title>
+            <title>Roblox Remote Executor v${VERSION}</title>
             <style>
                 body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 40px; }
+                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                .version { background: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; color: #00ff00; }
                 textarea { width: 100%; height: 300px; background: #2d2d2d; color: #00ff00; border: 1px solid #444; padding: 10px; font-family: monospace; outline: none; }
                 .controls { margin-top: 15px; display: flex; gap: 10px; align-items: center; }
                 input, select { background: #2d2d2d; color: white; border: 1px solid #444; padding: 8px; border-radius: 4px; }
@@ -25,7 +31,11 @@ app.get('/', (req, res) => {
             </style>
         </head>
         <body>
-            <h1>Remote Executor</h1>
+            <div class="header">
+                <h1>Remote Executor</h1>
+                <span class="version">Version ${VERSION}</span>
+            </div>
+            
             <textarea id="code" placeholder="print('Hello!')"></textarea>
             
             <div class="controls">
@@ -54,15 +64,19 @@ app.get('/', (req, res) => {
                     
                     status.innerText = "Sending...";
                     
-                    await fetch('/set-script', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            code: code,
-                            target: type === 'All' ? 'All' : user
-                        })
-                    });
-                    status.innerText = "Sent! Target: " + (type === 'All' ? 'Everyone' : user);
+                    try {
+                        await fetch('/set-script', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                code: code,
+                                target: type === 'All' ? 'All' : user
+                            })
+                        });
+                        status.innerText = "Sent! Target: " + (type === 'All' ? 'Everyone' : user);
+                    } catch (e) {
+                        status.innerText = "Error: Could not reach server.";
+                    }
                 }
             </script>
         </body>
