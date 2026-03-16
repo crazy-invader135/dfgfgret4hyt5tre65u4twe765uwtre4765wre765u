@@ -5,7 +5,7 @@ app.use(express.json());
 app.use(express.text());
 
 // --- CONFIGURATION ---
-const VERSION = "1.2.0"; // You can change this whenever you update
+const VERSION = "2.0.1"; 
 // ---------------------
 
 let currentScript = "-- No script set";
@@ -19,36 +19,36 @@ app.get('/', (req, res) => {
         <head>
             <title>Roblox Remote Executor v${VERSION}</title>
             <style>
-                body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 40px; }
-                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-                .version { background: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; color: #00ff00; }
-                textarea { width: 100%; height: 300px; background: #2d2d2d; color: #00ff00; border: 1px solid #444; padding: 10px; font-family: monospace; outline: none; }
-                .controls { margin-top: 15px; display: flex; gap: 10px; align-items: center; }
-                input, select { background: #2d2d2d; color: white; border: 1px solid #444; padding: 8px; border-radius: 4px; }
-                button { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; }
-                button:hover { background: #0056b3; }
-                .status { margin-top: 10px; color: #aaa; font-size: 0.9em; }
+                body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #e0e0e0; padding: 40px; }
+                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 25px; }
+                .version { background: #00ff00; color: #000; padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 0.8em; }
+                textarea { width: 100%; height: 350px; background: #1e1e1e; color: #00ff41; border: 1px solid #444; padding: 15px; font-family: 'Consolas', monospace; border-radius: 8px; outline: none; }
+                .controls { margin-top: 20px; display: flex; gap: 15px; align-items: center; background: #1e1e1e; padding: 15px; border-radius: 8px; }
+                input, select { background: #2d2d2d; color: white; border: 1px solid #555; padding: 10px; border-radius: 4px; }
+                button { background: #007bff; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+                button:hover { background: #0056b3; transform: translateY(-2px); }
+                .status { margin-top: 15px; color: #888; font-style: italic; }
             </style>
         </head>
         <body>
             <div class="header">
-                <h1>Remote Executor</h1>
-                <span class="version">Version ${VERSION}</span>
+                <h1>Executor Dashboard</h1>
+                <span class="version">V ${VERSION}</span>
             </div>
             
-            <textarea id="code" placeholder="print('Hello!')"></textarea>
+            <textarea id="code" placeholder="print('Hello from the Cloud!')"></textarea>
             
             <div class="controls">
-                <label>Target:</label>
+                <label>Target Filter:</label>
                 <select id="targetType" onchange="toggleInput()">
-                    <option value="All">Everyone</option>
-                    <option value="Specific">Specific User</option>
+                    <option value="All">Global (Everyone)</option>
+                    <option value="Specific">Specific Player</option>
                 </select>
-                <input type="text" id="username" placeholder="Username" style="display:none;">
-                <button onclick="sendScript()">Execute</button>
+                <input type="text" id="username" placeholder="Exact Username" style="display:none;">
+                <button onclick="sendScript()">Deploy Script</button>
             </div>
             
-            <div id="status" class="status">Ready</div>
+            <div id="status" class="status">Awaiting Input...</div>
 
             <script>
                 function toggleInput() {
@@ -62,10 +62,10 @@ app.get('/', (req, res) => {
                     const user = document.getElementById('username').value;
                     const status = document.getElementById('status');
                     
-                    status.innerText = "Sending...";
+                    status.innerText = "Broadcasting...";
                     
                     try {
-                        await fetch('/set-script', {
+                        const res = await fetch('/set-script', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -73,9 +73,9 @@ app.get('/', (req, res) => {
                                 target: type === 'All' ? 'All' : user
                             })
                         });
-                        status.innerText = "Sent! Target: " + (type === 'All' ? 'Everyone' : user);
+                        if(res.ok) status.innerText = "Successfully deployed to " + (type === 'All' ? 'Global' : user);
                     } catch (e) {
-                        status.innerText = "Error: Could not reach server.";
+                        status.innerText = "Failed to reach Render server.";
                     }
                 }
             </script>
@@ -101,4 +101,4 @@ app.get('/get-script', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Dashboard Online on Port ${PORT}`));
