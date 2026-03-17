@@ -1,64 +1,78 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-
-// Render uses the PORT environment variable automatically
 const PORT = process.env.PORT || 3000;
 
-/** * PRESETS LIBRARY
- * Add your preset names and their corresponding Pastebin RAW URLs here.
- * Ensure URLs are the "raw" version (e.g., /raw/...).
- */
-const presets = {
-    "test_script": "https://pastebin.com/raw/example1",
-    "admin_gui": "https://pastebin.com/raw/example2",
-    "kill_all": "https://pastebin.com/raw/example3",
-    "fly_script": "https://pastebin.com/raw/example4"
+// The "Queue" - Roblox will fetch the script from here
+let currentQueue = {
+    script: null,
+    timestamp: 0
 };
 
-// 1. Root Route - Status check for your browser
+// Your Library of Raw Pastebin URLs
+const presets = {
+    "kill_all": "https://pastebin.com/raw/example1",
+    "message_all": "https://pastebin.com/raw/example2",
+    "fling_players": "https://pastebin.com/raw/example3"
+};
+
+// 1. The Website Interface (The Control Panel)
 app.get('/', (req, res) => {
+    let buttons = Object.keys(presets).map(name => 
+        `<button onclick="execute('${name}')" style="padding:10px; margin:5px; cursor:pointer;">Execute ${name}</button>`
+    ).join('');
+
     res.send(`
-        <h1>Server Executor Backend is ONLINE! 🚀</h1>
-        <p>This API is public. Use <code>/list</code> to see available presets.</p>
-        <p>Use <code>/get-command?preset=NAME</code> to fetch Lua code.</p>
+        <html>
+            <body style="font-family:sans-serif; text-align:center; padding-top:50px;">
+                <h1>Roblox Command Center</h1>
+                <div id="status">Ready</div>
+                <hr/>
+                ${buttons}
+                <script>
+                    function execute(name) {
+                        document.getElementById('status').innerText = "Sending " + name + "...";
+                        fetch('/set-command?preset=' + name)
+                            .then(res => res.text())
+                            .then(data => {
+                                document.getElementById('status').innerText = "Last Sent: " + name;
+                            });
+                    }
+                </script>
+            </body>
+        </html>
     `);
 });
 
-// 2. Public List Route - Shows anyone what commands are available
-app.get('/list', (req, res) => {
-    const availablePresets = Object.keys(presets);
-    res.json({
-        status: "success",
-        message: "Available Roblox Presets",
-        count: availablePresets.length,
-        presets: availablePresets
-    });
-});
-
-// 3. The Roblox Request Handler
-app.get('/get-command', async (req, res) => {
+// 2. Set the command (Called by the Website buttons)
+app.get('/set-command', async (req, res) => {
     const presetName = req.query.preset;
-    const targetUrl = presets[presetName];
-
-    if (targetUrl) {
+    const url = presets[presetName];
+    if (url) {
         try {
-            // Fetch the raw Lua code from the external source
-            const response = await axios.get(targetUrl);
-            
-            // Send the code back to Roblox as plain text
-            res.set('Content-Type', 'text/plain');
-            res.send(response.data);
-        } catch (error) {
-            console.error("Error fetching from source:", error.message);
-            res.status(500).send("-- Error: Could not reach the script source (Pastebin/GitHub).");
+            const response = await axios.get(url);
+            currentQueue.script = response.data;
+            currentQueue.timestamp = Date.now();
+            res.send("Success");
+        } catch (e) {
+            res.status(500).send("Error fetching script");
         }
     } else {
-        res.status(404).send("-- Error: Preset name '" + presetName + "' not found in server configuration.");
+        res.status(404).send("Preset not found");
     }
 });
 
-// Start the server
+// 3. Get the command (Called by Roblox)
+app.get('/get-command', (req, res) => {
+    if (currentQueue.script) {
+        res.send(currentQueue.script);
+        // Clear the queue after sending so it doesn't run twice
+        currentQueue.script = null; 
+    } else {
+        res.send("-- No command");
+    }
+});
+
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
