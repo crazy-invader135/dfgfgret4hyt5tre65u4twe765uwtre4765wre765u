@@ -46,7 +46,7 @@ app.get('/', (req, res) => {
             <div class="grid">
                 <div class="card" onclick="send('Test1')">
                     <div class="card-image" style="background-image: url('https://tr.rbxcdn.com/30day-pa0903328575089f9353974d61993245/420/420/Image/Png');"></div>
-                    <div class="card-content"><p class="card-title">Red Baseplate</p><p class="card-description">Simple visual change.</p></div>
+                    <div class="card-content"><p class="card-title">test1</p><p class="card-description">Simple visual change.</p></div>
                 </div>
 
                 <div class="card" onclick="send('Test')">
